@@ -164,11 +164,12 @@ Enhancements over Stage 1:
 
 ## Workflow Imports & Configuration
 
-1. **Copy the workflow JSON files** (`workflows/*.json`) into your n8n instance via the *Import from file* dialog.
-2. **Import the SSH subworkflow** (`workflows/subflow_ssh_exec.json`) first. It exposes an `executeWorkflowTrigger` and the SSH node that powers the Homelab Shell tool in Stages 2–5.
-3. After import, open the subworkflow and set your actual SSH credentials (it ships with the placeholder `SSH (set me after import)`).
-4. In each Terry workflow, edit the **Homelab Shell Tool** node and pick the subworkflow you just configured (or keep the embedded JSON if you prefer the portable version).
-5. Update the **OpenAI** and **Telegram** credentials referenced in the workflow nodes.
+1. **Copy the workflow JSON files** (`workflows/*.json`) into your n8n instance via the *Import from file* dialog, **or** run `scripts/import_terry_workflows.sh` after the stack is up to batch-import everything with the `n8n import:workflow` CLI.
+2. If you use the script, it copies the JSON exports into the mounted `data/import` folder and imports them with `--force`, so repeated runs update existing workflows rather than creating duplicates.
+3. **Import the SSH subworkflow** (`workflows/subflow_ssh_exec.json`) first. It exposes an `executeWorkflowTrigger` and the SSH node that powers the Homelab Shell tool in Stages 2–5.
+4. After import, open the subworkflow and set your actual SSH credentials (it ships with the placeholder `SSH (set me after import)`).
+5. In each Terry workflow, edit the **Homelab Shell Tool** node and pick the subworkflow you just configured (or keep the embedded JSON if you prefer the portable version).
+6. Update the **OpenAI** and **Telegram** credentials referenced in the workflow nodes.
 
 ### Environment variables
 
