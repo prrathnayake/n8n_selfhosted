@@ -206,15 +206,17 @@ Without `TERRY_TELEGRAM_CHAT_ID`, Stage 5 will still run but the Telegram nodes 
 **Issue**: The `n8n` container cannot create its configuration file because the bind-mounted `./data` directory is owned by `root` (or another user) on the host machine.
 
 **Solution**:
-1. Run the helper script to fix the ownership of the directory that is mounted into the container:
+1. The stack now includes a lightweight `n8n-volume-permissions` service that prepares the `./data` directory before the main n8n container starts. Simply running `docker compose up -d` will fix the permissions in most cases.
+2. If your host uses different user or group IDs, set `N8N_DATA_UID`/`N8N_DATA_GID` in your `.env` file so the helper service (and scripts) know which ownership to apply.
+3. If you still run into issues or prefer to fix things manually, run the helper script:
 
    ```bash
-   sudo NODE_UID=1000 NODE_GID=1000 ./scripts/fix-volume-permissions.sh
+   sudo N8N_DATA_UID=1000 N8N_DATA_GID=1000 ./scripts/fix-volume-permissions.sh
    ```
 
-   Adjust `NODE_UID`/`NODE_GID` if your host uses different IDs for the account that should own the files.
-2. Start (or restart) the stack: `docker compose up -d`
-3. Check the container logs again—`n8n` should now be able to persist its configuration without permission errors.
+   Adjust the UID/GID values to match your environment.
+4. Start (or restart) the stack: `docker compose up -d`
+5. Check the container logs again—`n8n` should now be able to persist its configuration without permission errors.
 
 ### Telegram Not Receiving Messages
 
