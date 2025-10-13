@@ -17,12 +17,33 @@ services:
     volumes:
       - ./redis:/data
 
+  n8n-volume-permissions:
+    image: alpine:3.20
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mkdir -p /data
+        chown -R ${N8N_DATA_UID:-1000}:${N8N_DATA_GID:-1000} /data
+        chmod -R ug+rwX /data
+    volumes:
+      - ./data:/data
+    environment:
+      N8N_DATA_UID: ${N8N_DATA_UID:-1000}
+      N8N_DATA_GID: ${N8N_DATA_GID:-1000}
+    restart: "no"
+
   n8n:
     image: n8nio/n8n:latest
     restart: unless-stopped
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+      n8n-volume-permissions:
+        condition: service_completed_successfully
     env_file:
       - .env
     environment:
