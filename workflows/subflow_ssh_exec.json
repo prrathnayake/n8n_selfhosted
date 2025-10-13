@@ -1,0 +1,65 @@
+{
+  "name": "Subflow \u2014 SSH Exec (command passthrough)",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "defineBelow",
+        "jsonParameters": true,
+        "values": {
+          "string": [
+            {
+              "name": "command",
+              "value": "echo hello from ssh subflow"
+            }
+          ],
+          "number": [],
+          "boolean": []
+        },
+        "options": {}
+      },
+      "id": "Start",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "={{$json.command}}",
+        "options": {}
+      },
+      "id": "SSH",
+      "name": "SSH Exec",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        200
+      ],
+      "credentials": {
+        "ssh": {
+          "id": "__SSH__",
+          "name": "SSH (set me after import)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "SSH Exec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
