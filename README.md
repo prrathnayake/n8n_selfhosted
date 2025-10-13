@@ -60,6 +60,23 @@ Terry is an AI agent built with n8n that can:
 
 ## Initial Setup
 
+### Base environment configuration
+
+1. Copy the example configuration so Docker Compose can pick it up:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Review the following defaults that silence the runtime deprecation warnings shipped with recent n8n releases:
+
+   - `N8N_RUNNERS_ENABLED=true` turns on the task runner infrastructure that will soon be enabled by default.
+   - `OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true` ensures manual executions use workers when running in queue mode.
+   - `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` keeps backwards-compatible access to environment variables from Code nodes and expressions. Flip this to `true` if you do **not** need that access.
+   - `N8N_GIT_NODE_DISABLE_BARE_REPOS=true` proactively disables the legacy bare-repository support in the Git node.
+
+   Adjust the values if your deployment needs different behaviour, then restart the stack to apply the changes.
+
 ### Demo Website Container
 
 Create a simple nginx website for testing Terry's monitoring capabilities:
