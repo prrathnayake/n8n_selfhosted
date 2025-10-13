@@ -1,56 +1,61 @@
 {
   "name": "Subflow \u2014 SSH Exec (command passthrough)",
   "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
   "nodes": [
     {
       "parameters": {
-        "mode": "defineBelow",
-        "jsonParameters": true,
-        "values": {
-          "string": [
-            {
-              "name": "command",
-              "value": "echo hello from ssh subflow"
-            }
-          ],
-          "number": [],
-          "boolean": []
-        },
-        "options": {}
+        "inputSource": "passthrough"
       },
-      "id": "Start",
-      "name": "Start",
-      "type": "n8n-nodes-base.start",
-      "typeVersion": 1,
+      "id": "b0b68b39-2270-4f54-a566-71ea37dc0f0c",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
       "position": [
-        -320,
+        -600,
         200
       ]
     },
     {
       "parameters": {
         "operation": "executeCommand",
-        "command": "={{$json.command}}",
+        "command": "={{ $json.command }}",
         "options": {}
       },
-      "id": "SSH",
+      "id": "2d08b646-7ec0-4f94-9055-407d3d5da8f0",
       "name": "SSH Exec",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 2,
       "position": [
-        -40,
+        -240,
         200
       ],
       "credentials": {
         "ssh": {
-          "id": "__SSH__",
+          "id": "__REPLACE_WITH_SSH_CREDENTIAL_ID__",
           "name": "SSH (set me after import)"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst output = item.json || {};\nconst command = output.command ?? $json.command ?? '';\nreturn [{\n  json: {\n    command,\n    stdout: output.stdout ?? output.data ?? '',\n    stderr: output.stderr ?? output.error ?? '',\n    exitCode: output.exitCode ?? output.code ?? null\n  }\n}];",
+        "options": {}
+      },
+      "id": "a0e86bfd-77f1-4c9f-9a1c-8c075dcb39fd",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        200
+      ]
     }
   ],
   "connections": {
-    "Start": {
+    "When Executed by Another Workflow": {
       "main": [
         [
           {
@@ -60,6 +65,19 @@
           }
         ]
       ]
+    },
+    "SSH Exec": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
-  }
+  },
+  "pinData": {},
+  "tags": []
 }
