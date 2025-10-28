@@ -130,7 +130,7 @@ services:
     command: >
       sh -c '
       mkdir -p /backups &&
-      echo "0 18 * * * tar -czf /backups/n8n-data-$(date +\%Y\%m\%d-\%H\%M).tar.gz -C /data ."
+      echo "0 18 * * * tar -czf /backups/n8n-data-\$(date +\%Y\%m\%d-\%H\%M).tar.gz -C /data ."
         > /etc/crontabs/root &&
       crond -f -L /dev/stdout
       '
