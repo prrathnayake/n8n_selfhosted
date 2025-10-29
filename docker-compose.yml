@@ -140,10 +140,16 @@ services:
     restart: unless-stopped
     command: >
       sh -c '
-      mkdir -p /backups &&
-      echo "0 18 * * * tar -czf /backups/n8n-data-\$(date +\%Y\%m\%d-\%H\%M).tar.gz -C /data ."
-        > /etc/crontabs/root &&
-      crond -f -L /dev/stdout
+        set -eu
+        apk add --no-cache tzdata >/dev/null
+        mkdir -p /backups
+        cat <<"EOF" > /etc/crontabs/root
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 18 * * * tar -czf /backups/n8n-data-\$(date +\%Y\%m\%d-\%H\%M).tar.gz -C /data . >> /var/log/cron.log 2>&1
+EOF
+        touch /var/log/cron.log
+        crond -f -L /dev/stdout
       '
     environment:
       - TZ=${TZ}
