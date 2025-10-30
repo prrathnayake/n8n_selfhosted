@@ -1,41 +1,10 @@
 version: "3.9"
 
-networks:
-  proxy:
-    driver: bridge
-
 volumes:
   postgres_data:
   n8n_data:
-  traefik_letsencrypt:
 
 services:
-  traefik:
-    image: traefik:v3.1
-    container_name: traefik
-    restart: unless-stopped
-    command:
-      - --api.dashboard=false
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      # Let's Encrypt (HTTP challenge)
-      - --certificatesresolvers.le.acme.email=${TRAEFIK_ACME_EMAIL}
-      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.le.acme.httpchallenge=true
-      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - traefik_letsencrypt:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    environment:
-      - TZ=${TZ}
-    networks:
-      - proxy
-
   postgres:
     image: postgres:15-alpine
     container_name: n8n_postgres
@@ -47,21 +16,21 @@ services:
       TZ: ${TZ}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - proxy
 
   n8n:
     image: n8nio/n8n:1.77.0
     container_name: n8n_app
     restart: unless-stopped
+    ports:
+      - "5678:5678"
     environment:
-      # --- Core URL config for public HTTPS behind Traefik ---
-      N8N_HOST: ${N8N_HOST}
-      N8N_PROTOCOL: https
+      # --- Core URL config for local access ---
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PROTOCOL: http
       N8N_PORT: 5678
-      N8N_EDITOR_BASE_URL: https://${N8N_HOST}/
-      N8N_WEBHOOK_URL: https://${N8N_HOST}/
-      WEBHOOK_URL: https://${N8N_HOST}/
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5678/}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
       # --- Timezone ---
       GENERIC_TIMEZONE: ${TZ}
       TZ: ${TZ}
@@ -88,28 +57,8 @@ services:
       EXECUTIONS_DATA_MAX_AGE: 168   # hours (7 days)
     depends_on:
       - postgres
-      - traefik
     volumes:
       - n8n_data:/home/node/.n8n
-    labels:
-      - traefik.enable=true
-      - traefik.http.services.n8n.loadbalancer.server.port=5678
-      # --- HTTPS router for public domain ---
-      - traefik.http.routers.n8n.rule=Host(`${N8N_HOST}`)
-      - traefik.http.routers.n8n.entrypoints=websecure
-      - traefik.http.routers.n8n.tls.certresolver=le
-      # --- HTTP router to redirect domain traffic to HTTPS ---
-      - traefik.http.routers.n8n-web.rule=Host(`${N8N_HOST}`)
-      - traefik.http.routers.n8n-web.entrypoints=web
-      - traefik.http.routers.n8n-web.middlewares=n8n-https-redirect
-      - traefik.http.routers.n8n-web.service=n8n
-      - traefik.http.middlewares.n8n-https-redirect.redirectscheme.scheme=https
-      # --- Local access without domain (no TLS) ---
-      - traefik.http.routers.n8n-local.rule=Host(`localhost`) || Host(`127.0.0.1`)
-      - traefik.http.routers.n8n-local.entrypoints=web
-      - traefik.http.routers.n8n-local.service=n8n
-    networks:
-      - proxy
 
   # ---- Nightly Postgres backups to ./backups/postgres ----
   pg_backup:
@@ -130,8 +79,6 @@ services:
       - ./backups/postgres:/backups
     depends_on:
       - postgres
-    networks:
-      - proxy
 
   # ---- Nightly tarball of the n8n_data volume to ./backups/n8n ----
   n8n_data_backup:
@@ -143,11 +90,11 @@ services:
         set -eu
         apk add --no-cache tzdata >/dev/null
         mkdir -p /backups
-        cat <<"EOF" > /etc/crontabs/root
+        cat <<"INNER" > /etc/crontabs/root
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 0 18 * * * tar -czf /backups/n8n-data-\$(date +\%Y\%m\%d-\%H\%M).tar.gz -C /data . >> /var/log/cron.log 2>&1
-EOF
+INNER
         touch /var/log/cron.log
         crond -f -L /dev/stdout
       '
@@ -158,5 +105,3 @@ EOF
       - ./backups/n8n:/backups
     depends_on:
       - n8n
-    networks:
-      - proxy
