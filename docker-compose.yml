@@ -21,6 +21,8 @@ services:
     image: n8nio/n8n:1.77.0
     container_name: n8n_app
     restart: unless-stopped
+    command: >
+      sh -c "n8n migrate:database && n8n start"
     ports:
       - "5678:5678"
     environment:
